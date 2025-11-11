@@ -1,0 +1,152 @@
+<!-- Valesa Studio Splash (robust for GB) -->
+<div id="valesa-splash" aria-hidden="false">
+  <img
+    id="vs-img"
+    src="https://www.dropbox.com/scl/fi/1yv0b31kxxu8p22fle1a3/A774C404-3CE1-4193-9F75-79007084A920.png?raw=1"
+    alt="Valesa Studio Splash"
+  />
+  <div class="vs-shimmer" aria-hidden="true"></div>
+
+  <!-- Fallback tap overlay (hidden when autoplay works) -->
+  <button id="vs-tap" type="button" aria-label="Start app">Tap to start</button>
+
+  <!-- Audio element (kept minimal) -->
+  <audio id="vs-audio" preload="auto">
+    <source
+      src="https://www.dropbox.com/scl/fi/1yv0b31kxxu8p22fle1a3/Menu.mp3?raw=1"
+      type="audio/mpeg"
+    />
+  </audio>
+</div>
+
+<style>
+  :root{
+    --bg:#FAF9F6;
+  }
+  /* full cover */
+  #valesa-splash{
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    z-index:99999;
+    transition: opacity .9s ease, transform .9s ease;
+    overflow:hidden;
+  }
+  #valesa-splash.hide{ opacity:0; transform: translateY(-10%); pointer-events:none; }
+
+  #vs-img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+  .vs-shimmer{
+    position:absolute; inset:0;
+    background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+    mix-blend-mode: overlay;
+    animation: vsShimmer 2.2s linear;
+    opacity:0.25;
+    pointer-events:none;
+  }
+  @keyframes vsShimmer{ 0%{transform:translateX(-100%);} 100%{transform:translateX(100%);} }
+
+  /* Tap overlay - large, centered, visible only if autoplay blocked */
+  #vs-tap{
+    position:absolute;
+    left:50%; top:50%;
+    transform:translate(-50%,-50%);
+    padding:16px 28px;
+    border-radius:999px;
+    border:none;
+    background: rgba(0,0,0,0.06);
+    color:#2C2C2C;
+    font-size:16px;
+    backdrop-filter: blur(4px);
+    cursor:pointer;
+    display:none; /* shown only if needed */
+    z-index:100001;
+  }
+
+  /* Make sure overlay covers interactive areas on some GB containers */
+  #valesa-splash *{ -webkit-tap-highlight-color: transparent; }
+</style>
+
+<script>
+(function(){
+  const splash = document.getElementById('valesa-splash');
+  const audio = document.getElementById('vs-audio');
+  const tap = document.getElementById('vs-tap');
+  let autoplaySucceeded = false;
+  let timedHide;
+
+  // try to autoplay
+  function tryPlay() {
+    if(!audio) return Promise.resolve(false);
+    return audio.play()
+    .then(()=> true)
+    .catch(()=> false);
+  }
+
+  // hide splash
+  function hideSoon(delay = 2200){
+    clearTimeout(timedHide);
+    timedHide = setTimeout(()=>{
+      splash.classList.add('hide');
+      // remove from accessibility after animation
+      setTimeout(()=> { splash.setAttribute('aria-hidden','true'); }, 900);
+    }, delay);
+  }
+
+  // Called when user explicitly taps
+  function userStart(){
+    tryPlay().then(success=>{
+      autoplaySucceeded = success;
+      tap.style.display = 'none';
+      hideSoon(600); // shorter if user tapped
+    });
+    // remove listeners
+    document.removeEventListener('click', userStart);
+    document.removeEventListener('touchstart', userStart);
+  }
+
+  // Setup after DOM loaded
+  document.addEventListener('DOMContentLoaded', ()=>{
+    // Attempt autoplay immediately
+    tryPlay().then(success=>{
+      if(success){
+        autoplaySucceeded = true;
+        // allow the shimmer to run then hide
+        hideSoon(2200);
+      } else {
+        // Autoplay blocked -> show a visible tap CTA
+        tap.style.display = 'block';
+        tap.addEventListener('click', userStart, {once:true});
+        // also accept any first tap on document (some webviews need bigger area)
+        document.addEventListener('click', userStart, {once:true});
+        document.addEventListener('touchstart', userStart, {once:true});
+      }
+    }).catch(()=>{
+      tap.style.display = 'block';
+      document.addEventListener('click', userStart, {once:true});
+      document.addEventListener('touchstart', userStart, {once:true});
+    });
+
+    // Safety: if audio never resolves or script is blocked, remove splash after 4.5s
+    setTimeout(()=> {
+      if(!splash.classList.contains('hide')) splash.classList.add('hide');
+    }, 4500);
+  });
+
+  // If GoodBarber strips scripts entirely, we show the tap so user can at least dismiss visually:
+  // (check after a short delay; if script runs it will hide the tap)
+  setTimeout(()=>{
+    if(!window || !document) return;
+    // If the tap is still invisible and no events attached, ensure minimal visibility for users
+    try {
+      if(tap && tap.style.display === 'none') {
+        // leave as is (script did run)
+      }
+    } catch(e){}
+  }, 1000);
+
+})();
+</script>
