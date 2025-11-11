@@ -150,3 +150,106 @@
 
 })();
 </script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Valesa Studio Splash</title>
+  <style>
+    :root{
+      --bg:#FAF9F6;
+      --accent:#D4AF37;
+      --soft:#E6C97A;
+    }
+    html,body{
+      margin:0; padding:0; height:100%;
+      background:var(--bg);
+      overflow:hidden;
+      font-family:sans-serif;
+    }
+    #valesa-splash{
+      position:fixed;
+      inset:0;
+      background:var(--bg);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      z-index:9999;
+      transition:opacity 1s ease, transform 1s ease;
+    }
+    #valesa-splash.hide{
+      opacity:0;
+      transform:translateY(-10%);
+      pointer-events:none;
+    }
+    #valesa-splash img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+    }
+    .vs-shimmer{
+      position:absolute; inset:0;
+      background:linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.6) 50%, transparent 100%);
+      mix-blend-mode:overlay;
+      animation:vsShimmer 2.2s linear infinite;
+      opacity:0.25;
+      pointer-events:none;
+    }
+    @keyframes vsShimmer{
+      0%{transform:translateX(-100%);}
+      100%{transform:translateX(100%);}
+    }
+    #vs-tap{
+      position:absolute;
+      left:50%; top:50%;
+      transform:translate(-50%,-50%);
+      background:rgba(0,0,0,0.05);
+      border:none;
+      padding:16px 28px;
+      border-radius:999px;
+      color:#2C2C2C;
+      font-size:16px;
+      display:none;
+      cursor:pointer;
+      backdrop-filter:blur(4px);
+      z-index:10001;
+    }
+  </style>
+</head>
+<body>
+  <div id="valesa-splash">
+    <img src="https://www.dropbox.com/scl/fi/1yv0b31kxxu8p22fle1a3/A774C404-3CE1-4193-9F75-79007084A920.png?raw=1" alt="Valesa Studio Splash">
+    <div class="vs-shimmer"></div>
+    <button id="vs-tap">Tap to start</button>
+    <audio id="vs-audio" preload="auto">
+      <source src="https://www.dropbox.com/scl/fi/1yv0b31kxxu8p22fle1a3/Menu.mp3?raw=1" type="audio/mpeg">
+    </audio>
+  </div>
+
+  <script>
+    const splash = document.getElementById('valesa-splash');
+    const audio = document.getElementById('vs-audio');
+    const tap = document.getElementById('vs-tap');
+
+    function hideSplash(delay = 2200){
+      setTimeout(()=> splash.classList.add('hide'), delay);
+    }
+
+    function playAudio(){
+      audio.play()
+      .then(()=> hideSplash())
+      .catch(()=>{
+        tap.style.display = 'block';
+        tap.addEventListener('click', ()=>{
+          audio.play();
+          tap.style.display = 'none';
+          hideSplash(600);
+        }, {once:true});
+      });
+    }
+
+    window.addEventListener('load', playAudio);
+  </script>
+</body>
+</html>
